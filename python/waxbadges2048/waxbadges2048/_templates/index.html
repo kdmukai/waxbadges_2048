@@ -1,0 +1,431 @@
+{% load staticfiles %}
+{% load socialaccount %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+
+  <meta property="og:title" content="2048 - WAXBadges Edition!" />
+  <meta property="og:description" content="The classic addictive block game now reborn with WAXBadges achievements! Each achievement you unlock will live forever on the WAX blockchain!" />
+  <meta property="og:image" content="{% static 'img/2048_splash.png' %}" />
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@WAXBadges">
+  <meta name="twitter:title" content="2048 - WAXBadges Edition!">
+  <meta name="twitter:description" content="The classic addictive block game now reborn with WAXBadges achievements! Each achievement you unlock will live forever on the WAX blockchain!">
+  <meta name="twitter:image" content="{% static 'img/2048_splash.png' %}">
+
+  <title>2048 - WAXBadges Edition!</title>
+
+
+  <link href="{% static 'style/main.css' %}" rel="stylesheet" type="text/css">
+  <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
+  <link rel="apple-touch-icon" href="{% static 'meta/apple-touch-icon.png' %}">
+  <link rel="apple-touch-startup-image" href="{% static 'meta/apple-touch-startup-image-640x1096.png' %}" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)"> <!-- iPhone 5+ -->
+  <link rel="apple-touch-startup-image" href="{% static 'meta/apple-touch-startup-image-640x920.png' %}"  media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)"> <!-- iPhone, retina -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=no, minimal-ui">
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="{% static 'js/js.cookie.js' %}"></script>
+
+
+  <style>
+    .page_overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0, 0.75);
+      text-align: center;
+      z-index: 20;
+    }
+    .page_overlay_popup {
+      display: none;
+      opacity: 0.0;
+      margin: 0 auto;
+      max-width: 650px;
+      text-align: center;
+      border-radius: 3em;
+      border: 5px solid #6cc7cc;
+      background-color: #eee;
+      padding: 0.5em;
+      padding-bottom: 1.5em;
+      z-index: 30;
+    }
+    #page_overlay_popup_cancel_button {
+      margin-right: 1em;
+    }
+
+    .centered {
+      text-align: center;
+    }
+
+    .dialog_title {
+        margin-top: 0;
+        font-size: 1.5em;
+        padding-bottom: 1em;
+    }
+
+    .waxbadges_logo {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .user_info {
+      position: absolute;
+      top: 0.25em;
+      right: 0.5em;
+      z-index: 20;
+    }
+    .user_info .profile_image {
+      float: left;
+      width: 32px;
+      height: 32px;
+      border-radius: 16px;
+    }
+    .user_info .username {
+      vertical-align: top;
+    }
+    .user_info .signout {
+      font-size: 0.6em;
+      text-align: right;
+    }
+
+    .clear_both {
+      clear: both;
+    }
+
+    #achievement_granted_container {
+      position: fixed;
+      bottom: 0;
+      display: none;
+      width: 100%;
+      padding-top: 0.25em;
+      background-color: #333;
+      color: #6cc7cc;
+      text-align: center;
+      font-size: 0.8em;
+      margin: auto;
+      padding-bottom: 0.5em;
+      z-index: 100;
+    }
+
+    #achievement_asseturl {
+      margin-right: 0.5em;
+      width: 40px;
+      height: 40px;
+    }
+    #achievement_description {
+      font-style: italic;
+    }
+    #achievement_name {
+      font-style: bold;
+    }
+  </style>
+
+</head>
+<body>
+  <div class="waxbadges_logo">
+    <a href="/"><img width="175" height="36" src="{% static 'img/waxbadges_logo_350x72.png' %}" /></a>
+  </div>
+  {% if request.user.is_authenticated %}
+    <div class="user_info">
+      <img src='{{ socialaccount.extra_data.profile_image_url_https }}' class="profile_image"/>
+      <span class="username">@{{ request.user.username }}</span>
+      <div class="signout"><a href="{% url 'account_logout' %}">logout</a></div>
+    </div>
+    <div class="clear_both"></div>
+  {% endif %}
+
+  <div class="container">
+    <div class="heading">
+      <h1 class="title">2048</h1>
+      <div class="scores-container">
+        <div class="score-container">0</div>
+        <div class="best-container">0</div>
+      </div>
+    </div>
+
+    <div class="above-game">
+      <p class="game-intro">Join the numbers and get to the <strong>2048 tile!</strong></p>
+      <a class="restart-button">New Game</a>
+    </div>
+
+    <div class="game-container">
+      <div class="game-message">
+        <p></p>
+        <div class="lower">
+	        <a class="keep-playing-button">Keep going</a>
+          <a class="retry-button">Try again</a>
+        </div>
+      </div>
+
+      <div class="grid-container">
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+      </div>
+
+      <div class="tile-container">
+
+      </div>
+    </div>
+
+    <p class="game-explanation">
+      <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong>
+    </p>
+    <hr>
+    <p>
+      <strong class="important">View achievements:</strong> <a href="https://explorer.waxbadges.com/ecosys/1" target="_new">explorer.waxbadges.com</a>
+    </p>
+    <hr>
+    <p>
+    Created by <a href="http://gabrielecirulli.com" target="_blank">Gabriele Cirulli.</a> Based on <a href="https://itunes.apple.com/us/app/1024!/id823499224" target="_blank">1024 by Veewo Studio</a> and conceptually similar to <a href="http://asherv.com/threes/" target="_blank">Threes by Asher Vollmer.</a>
+    </p>
+  </div>
+
+  <div id="achievement_granted_container">
+    <table align="center">
+      <tr>
+        <td><img id="achievement_asseturl" src="https://static.waxbadges.com/assets/2048/0256.png" /></td>
+        <td>
+          Earned the "<span id="achievement_name">2^8</span>" achievement!
+          <div id="achievement_description">Build your first 256 block!</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+
+
+  <div id="login_container" class="overlay_content_container">
+      <div class="dialog_title">2048 - WAXBadges Edition!</div>
+      The classic addictive block game is now reborn with WAXBadges achievements!
+      Each achievement you unlock will live forever on the WAX blockchain!<br/>
+      <br/>
+      <br/>
+      You must be signed in to play and earn WAXBadges achievements!<br/>
+      <br/>
+      <a href="{% provider_login_url 'twitter' %}"><img src="{% static 'img/sign-in-with-twitter-gray.png' %}"/></a>
+  </div>
+
+
+  <div id="follow_container" class="overlay_content_container">
+      <div class="dialog_title">Last Step</div>
+      Follow @WAXBadges so we can DM you when you earn new achievements!<br/>
+      <i>(there may be a delay in detecting your follow)</i><br/>
+      <br/>
+      <a href="https://twitter.com/WAXBadges?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-size="large" data-show-count="false">Follow @WAXBadges</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+      <br/>
+      <br/>
+      <a href="#" onclick="completeFollow();">Okay, done!</a>
+    </div>
+  </div>
+
+
+
+
+  <script>
+      {# csrf cruft for ajax POST #}
+      var csrftoken = Cookies.get('csrftoken');
+      function csrfSafeMethod(method) {
+          // these HTTP methods do not require CSRF protection
+          return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+      }
+      $.ajaxSetup({
+          beforeSend: function(xhr, settings) {
+              if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                  xhr.setRequestHeader("X-CSRFToken", csrftoken);
+              }
+          }
+      });
+
+      // Django-provided globals
+      var isUserLoggedIn = {{ request.user.is_authenticated|lower }};
+      var isUserFollowing = {{ is_following|lower }};
+
+
+      function initPageOverlay(content_selector) {
+          // Transfer the content to a new hidden div
+          var $holder = $("<div/>").hide().appendTo("body");
+          $(content_selector).appendTo($holder);
+
+          // Make sure the content will be visible, even though it'll still be hidden in its parent div.
+          $(content_selector).show();
+      }
+
+
+      function showPageOverlay(content_selector) {
+          // Transfer the content to the popup overlay div
+          $(content_selector).appendTo($("#page_overlay_popup_content"));
+          $("#page_overlay").show();
+
+          var top_position = (window.innerHeight/2) - $("#page_overlay_popup").height();
+          if (top_position < 20) { top_position = 20; }
+          $("#page_overlay_popup").css({
+              "position": "relative",
+              "display": "block",
+              "top": top_position,
+          });
+
+          window.scrollTo(0, 0);
+          $("#page_overlay_popup").animate({opacity:1.0}, 500);
+      }
+
+
+      function hidePageOverlay() {
+          // Transfer the content back into a holder div
+          initPageOverlay($("#page_overlay_popup_content").children());
+
+          $("#page_overlay").hide();
+          $("#page_overlay_popup").css({opacity:0.0});
+      }
+
+
+      function showLogin() {
+        showPageOverlay("#login_container");
+      }
+      function showFollow() {
+        showPageOverlay("#follow_container");
+      }
+      function completeFollow() {
+        isUserFollowing = true;
+        hidePageOverlay("#follow_container");
+      }
+
+
+      {% if granted_achievements %}
+        var granted_achievements = [
+          {% for ga in granted_achievements %}
+            "{{ ga }}",
+          {% endfor %}
+        ];
+      {% else %}
+        var granted_achievements = [];
+      {% endif %}
+
+      var achievements_info = {{ achievements|safe }};
+
+      var achievements = {
+        tile_256: "0_0",
+        tile_512: "0_1",
+        tile_1024: "0_2",
+        tile_2048: "0_3",
+        tile_4096: "0_4",
+        score_20k: "0_5",
+        score_40k: "0_6",
+        score_60k: "0_7",
+        score_80k: "0_8",
+        score_100k: "0_9"
+      }
+
+
+      // Would normally obscure this on a real project to avoid fake submits
+      function checkAchievement(achievement) {
+        if (!granted_achievements.includes(achievement)) {
+          $.post(
+            "/ajax/grant_achievement",
+            {
+              'achievement': achievement
+            },
+            function(data) {
+              console.log(data);
+
+              // Show the grant message
+              var ach_info = achievements_info[achievement];
+              $("#achievement_name").text(ach_info.name);
+              $("#achievement_description").text(ach_info.description);
+              $("#achievement_asseturl").attr("src", ach_info.asseturl);
+
+              $("#achievement_granted_container").show();
+              setTimeout(
+                function() {
+                  $("#achievement_granted_container").hide();
+                },
+                8000
+              );
+
+              // Re-query the blockchain for the latest status
+              setTimeout(
+                function() {
+                  $.get(
+                    '/ajax/get_granted_achievements',
+                    function(data) {
+                      console.log(data);
+                      granted_achievements = data.granted_achievements;
+                    }
+                  );
+                },
+                500
+              );
+            }
+          );
+        }
+      }
+
+
+      $(document).ready(function() {
+
+        initPageOverlay("#login_container");
+        initPageOverlay("#follow_container");
+
+        if (!isUserLoggedIn) {
+          showLogin();
+        }
+
+      });
+  </script>
+
+  <script src="{% static 'js/bind_polyfill.js' %}"></script>
+  <script src="{% static 'js/classlist_polyfill.js' %}"></script>
+  <script src="{% static 'js/animframe_polyfill.js' %}"></script>
+  <script src="{% static 'js/keyboard_input_manager.js' %}"></script>
+  <script src="{% static 'js/html_actuator.js' %}"></script>
+  <script src="{% static 'js/grid.js' %}"></script>
+  <script src="{% static 'js/tile.js' %}"></script>
+  <script src="{% static 'js/local_storage_manager.js' %}"></script>
+  <script src="{% static 'js/game_manager.js' %}"></script>
+  <script src="{% static 'js/application.js' %}"></script>
+
+
+
+  <div class="page_overlay" id="page_overlay">
+    <div class="page_overlay_popup" id="page_overlay_popup">
+      <div id="page_overlay_popup_content"></div>
+{#       <div class="float_right"><div id="page_overlay_popup_cancel_button" class="stylized_button stylized_button_tiny">cancel</div></div> #}
+      <br/>
+      <div class="clear-both"></div>
+    </div>
+  </div>
+
+</body>
+</html>
