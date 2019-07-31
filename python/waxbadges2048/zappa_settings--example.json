@@ -1,0 +1,36 @@
+{
+    "production": {
+        "aws_region": "us-east-1",
+        "django_settings": "waxbadges2048.settings",
+        "profile_name": "your_aws_local_credential_profile",
+        "project_name": "waxbadges2048",
+        "runtime": "python3.7",
+        "s3_bucket": "your_upload_storage_bucket",
+        "certificate_arn": "arn:aws:acm:us-east-1:1234:certificate/892389289",
+        "domain": "yourcustomdomain.com",
+        "vpc_config" : {
+            "SubnetIds": [ "beyond the", "scope of", "this document" ],
+            "SecurityGroupIds": [ "see above" ]
+        },
+        "environment_variables": {
+            "STAGE": "production",
+            "SECRET_KEY": "your_django_secret_key",
+
+            "DATABASE_URL": "psql://dbuser:dbpass@1234.us-east-1.rds.amazonaws.com:5432/schemaname",
+
+            "LAMBDA_HOSTNAME": "1234.execute-api.us-east-1.amazonaws.com",
+
+            "AWS_ACCESS_KEY_ID": "ABCD1234",
+            "AWS_SECRET_ACCESS_KEY": "oiaejfkansdf",
+
+            "WAX_PRIVATE_KEY": "necessary_to_sign_contract_transactions",
+            "WAX_ACCOUNT_NAME": "abc12.waa",
+            "WAXBADGES_ECOSYSTEM_ID": "1",
+
+            "TWITTER_INTERNAL_CONSUMER_KEY": "abc",
+            "TWITTER_INTERNAL_CONSUMER_SECRET": "AbC",
+            "TWITTER_INTERNAL_ACCESS_TOKEN": "123abc",
+            "TWITTER_INTERNAL_ACCESS_SECRET": "123abc",
+        }
+    }
+}
